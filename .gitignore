@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets
+.env
+
+# Graphify (leaks absolute local paths)
+graphify-out/
+
+.pytest_cache/
+.DS_Store
+.vscode/
+.idea/
