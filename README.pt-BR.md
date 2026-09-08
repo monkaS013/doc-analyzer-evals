@@ -1,20 +1,20 @@
-# doc-analyzer-evals — extração com eval gold-standard
+# doc-analyzer-evals: extração com eval gold-standard
 
 *[English](README.md)*
 
-Extração estruturada de campos de documentos (faturas, recibos) com a parte que costuma ser pulada: uma avaliação mensurável. Responde "quão boa é a extração?" com número, não com achismo.
+Extração estruturada de campos de documentos como faturas e recibos, com uma avaliação mensurável junto. "Quão boa é a extração?" ganha uma resposta numérica aqui, que é justamente a parte que costuma ser pulada.
 
 ## O que faz
 
-Dado o texto de um documento, devolve um objeto tipado — fornecedor, número do documento, data de emissão, total, moeda — e o harness de avaliação pontua essas previsões contra um conjunto gold-standard com precision, recall e F1 por campo. Um gate de limiar transforma a eval em algo que um build pode reprovar.
+Dado o texto de um documento, devolve um objeto tipado com fornecedor, número do documento, data de emissão, total e moeda. O harness de avaliação então pontua essas previsões contra um conjunto gold-standard, reportando precision, recall e F1 por campo. Um gate de limiar transforma a eval em algo que um build pode reprovar.
 
 ## Por que é construído assim
 
 - **Extração tipada via tool use.** O alvo é um modelo Pydantic; o JSON schema dele é passado ao modelo como contrato da tool, então a resposta é um objeto estruturado, não prosa para parsear. A validação é papel do schema.
-- **Uma avaliação de verdade, não um demo.** Um conjunto gold-standard de documentos com campos esperados alimenta precision/recall/F1 por campo e micro-averaged, mais acurácia de exact-match. Extrações que faltam aparecem como perda de recall; extrações a mais, como perda de precision.
-- **Comparação justa por normalização.** Gold e previsão passam pelo mesmo normalizador antes de comparar, então `R$ 1.234,56` e `1234.56`, ou `12/03/2026` e `2026-03-12`, contam como iguais. Formatação não é punida; dado errado é.
-- **Um gate, como em produção.** O `run_eval.py` sai com código não-zero quando o F1 geral fica abaixo do limiar — a mesma disciplina de gatear um release pela qualidade de recuperação.
-- **Testável offline.** O extrator é injetado no harness, então as métricas, a normalização e todo o loop de pontuação são testados com um extrator fake e sem API key.
+- **Uma avaliação de verdade.** Um conjunto gold-standard de documentos com campos esperados alimenta precision/recall/F1 por campo e micro-averaged, mais acurácia de exact-match. Extrações que faltam aparecem como perda de recall; extrações a mais, como perda de precision.
+- **Comparação justa por normalização.** Gold e previsão passam pelo mesmo normalizador antes de comparar, então `R$ 1.234,56` e `1234.56`, ou `12/03/2026` e `2026-03-12`, contam como iguais. Diferença de formatação não custa nada na nota; dado errado continua custando.
+- **Um gate, como em produção.** O `run_eval.py` sai com código não-zero quando o F1 geral fica abaixo do limiar, a mesma disciplina que você usaria para gatear um release pela qualidade de recuperação.
+- **Testável offline.** O extrator é injetado no harness, então métricas, normalização e o resto do loop de pontuação rodam sob teste com um extrator fake e sem API key.
 
 ## Rodar a eval
 
@@ -38,7 +38,7 @@ python -m pytest -q
 
 ```
 docanalyzer/
-├── schema.py       # ExtractedDocument (Pydantic) — alvo da extração + contrato da tool
+├── schema.py       # ExtractedDocument (Pydantic): alvo da extração + contrato da tool
 ├── extractor.py    # chamada Claude por tool use (import preguiçoso)
 ├── normalize.py    # normalização de dinheiro / data / texto para comparação justa
 ├── metrics.py      # precision / recall / F1 + o gate
